@@ -1,53 +1,27 @@
-buildscript {
-    dependencies {
-        classpath 'de.guntram.mcmod:crowdin-translate:1.4+1.19-pre2'
-    }
-    repositories {
-        maven {
-            name = 'CrowdinTranslate source'
-            url = "https://minecraft.guntram.de/maven/"
-        }
-    }
-}
-
+//file:noinspection GroovyAssignabilityCheck
+//file:noinspection GroovyAccessibility
+//file:noinspection GrUnresolvedAccess
 plugins {
-    id 'fabric-loom' version '1.2-SNAPSHOT'
-    id "com.modrinth.minotaur" version "2.+"
-    id "com.matthewprenger.cursegradle" version "1.4.0"
+    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'maven-publish'
 }
 
-apply plugin: 'de.guntram.mcmod.crowdin-translate'
-crowdintranslate.crowdinProjectName = 'randomblockplacement'
+version = project.mod_version
+group = project.maven_group
 
-repositories {
-	maven {
-		url = "https://maven.fabricmc.net/"
-	}
-	maven {
-		url = "https://minecraft.guntram.de/maven/"
-	}
-	maven {
-		url = "https://maven.terraformersmc.com/releases/"
-	}
+base {
+    archivesName = project.archives_base_name
 }
 
-sourceCompatibility = 17
-targetCompatibility = 17
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-ext.Versions = new Properties()
-Versions.load(file("Versionfiles/mcversion-1.20.4.properties").newReader())
-
-archivesBaseName = "randomblockplacement"
-ext.projectVersion = "1.1.4"
-
-version = "${Versions['minecraft_version']}-fabric${Versions['fabric_versiononly']}-${project.projectVersion}"
-
-loom {
-    mixin.defaultRefmapName = "RandomBlockPlacement-refmap.json";
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
 
 processResources {
-    dependsOn downloadTranslations
     inputs.property "version", project.version
 
     filesMatching("fabric.mod.json") {
@@ -55,44 +29,19 @@ processResources {
     }
 }
 
-dependencies {
-    minecraft  "com.mojang:minecraft:${Versions['minecraft_version']}"
-    mappings   "net.fabricmc:yarn:${Versions['yarn_mappings']}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${Versions['loader_version']}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${Versions['fabric_version']}"
-    modImplementation "com.terraformersmc:modmenu:${Versions['modmenu_version']}"
-
-    modImplementation "de.guntram.mcmod:crowdin-translate:${Versions['crowdintranslate_version']}"
-    include "de.guntram.mcmod:crowdin-translate:${Versions['crowdintranslate_version']}"
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
 }
 
 java {
     withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
-	from "LICENSE"
-}
-
-import com.modrinth.minotaur.TaskModrinthUpload
-
-modrinth {
-    projectId = 'randomblockplacement'
-    versionName = project.archivesBaseName
-    uploadFile = remapJar
-}
-
-curseforge {
-    apiKey = System.getenv("CURSEFORGE_TOKEN") ?: "0"
-    project {
-        id = '363104'
-        releaseType = 'release'
-        addGameVersion("${Versions['minecraft_version']}")
-        addGameVersion("Java "+targetCompatibility)
-        addGameVersion("Fabric")
-        mainArtifact(remapJar)
-    }
-    options {
-        forgeGradleIntegration = false
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}"}
     }
 }
